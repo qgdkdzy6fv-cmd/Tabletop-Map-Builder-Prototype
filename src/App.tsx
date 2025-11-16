@@ -129,13 +129,17 @@ function App() {
   const handleAddElement = async (
     element: Omit<MapElement, 'id' | 'map_id' | 'created_at'>
   ) => {
-    const existingIndex = elements.findIndex(
-      (e) => e.grid_x === element.grid_x && e.grid_y === element.grid_y
-    );
+    const isTiny = element.width === 0.5 && element.sub_x !== undefined && element.sub_y !== undefined;
 
-    if (existingIndex !== -1) {
-      const existingElement = elements[existingIndex];
-      await supabase.from('map_elements').delete().eq('id', existingElement.id);
+    if (!isTiny) {
+      const existingIndex = elements.findIndex(
+        (e) => e.grid_x === element.grid_x && e.grid_y === element.grid_y
+      );
+
+      if (existingIndex !== -1) {
+        const existingElement = elements[existingIndex];
+        await supabase.from('map_elements').delete().eq('id', existingElement.id);
+      }
     }
 
     if (currentMapId) {
@@ -147,10 +151,14 @@ function App() {
 
       if (!error && data) {
         setElements((prev) => {
-          const filtered = prev.filter(
-            (e) => !(e.grid_x === element.grid_x && e.grid_y === element.grid_y)
-          );
-          return [...filtered, data];
+          if (isTiny) {
+            return [...prev, data];
+          } else {
+            const filtered = prev.filter(
+              (e) => !(e.grid_x === element.grid_x && e.grid_y === element.grid_y)
+            );
+            return [...filtered, data];
+          }
         });
       }
     } else {
@@ -161,10 +169,14 @@ function App() {
         ...element,
       };
       setElements((prev) => {
-        const filtered = prev.filter(
-          (e) => !(e.grid_x === element.grid_x && e.grid_y === element.grid_y)
-        );
-        return [...filtered, tempElement];
+        if (isTiny) {
+          return [...prev, tempElement];
+        } else {
+          const filtered = prev.filter(
+            (e) => !(e.grid_x === element.grid_x && e.grid_y === element.grid_y)
+          );
+          return [...filtered, tempElement];
+        }
       });
     }
   };
