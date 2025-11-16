@@ -12,6 +12,7 @@ import {
   MapNote,
   Tool,
   ShapeType,
+  SizeCategory,
   ExportColorSpace,
   ExportFormat,
   NoteBlock,
@@ -27,6 +28,7 @@ function App() {
   const [selectedShape, setSelectedShape] = useState<ShapeType>('wall');
   const [selectedColor, setSelectedColor] = useState('#000000');
   const [selectedText, setSelectedText] = useState('');
+  const [selectedSize, setSelectedSize] = useState<SizeCategory>('medium');
 
   const [gridWidth, setGridWidth] = useState(30);
   const [gridHeight, setGridHeight] = useState(20);
@@ -643,6 +645,7 @@ function App() {
               selectedShape={selectedShape}
               selectedColor={selectedColor}
               selectedText={selectedText}
+              selectedSize={selectedSize}
               colorHistory={colorHistory}
               darkMode={darkMode}
               onToolChange={setCurrentTool}
@@ -661,6 +664,7 @@ function App() {
                 updateColorHistory(color);
               }}
               onTextChange={setSelectedText}
+              onSizeChange={setSelectedSize}
               onToggleFavorite={toggleFavoriteColor}
               onUnfavorite={unfavoriteAndDeleteColor}
             />
@@ -678,6 +682,7 @@ function App() {
               selectedShape={selectedShape}
               selectedColor={selectedColor}
               selectedText={selectedText}
+              selectedSize={selectedSize}
               timeOfDay={timeOfDay}
               customTime={customTime}
               amPm={amPm}

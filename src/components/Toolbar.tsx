@@ -1,12 +1,14 @@
-import { Tool, ShapeType, ColorHistoryEntry } from '../types';
+import { Tool, ShapeType, ColorHistoryEntry, SizeCategory } from '../types';
 import { shapes } from '../lib/shapes';
 import { MousePointer, Square, Eraser, Type, Star, X } from 'lucide-react';
+import { SizeSelector } from './SizeSelector';
 
 interface ToolbarProps {
   currentTool: Tool;
   selectedShape: ShapeType | null;
   selectedColor: string;
   selectedText: string;
+  selectedSize: SizeCategory;
   colorHistory: ColorHistoryEntry[];
   darkMode: boolean;
   onToolChange: (tool: Tool) => void;
@@ -14,6 +16,7 @@ interface ToolbarProps {
   onColorChange: (color: string) => void;
   onColorSelect: (color: string) => void;
   onTextChange: (text: string) => void;
+  onSizeChange: (size: SizeCategory) => void;
   onToggleFavorite: (colorId: string, isFavorited: boolean) => void;
   onUnfavorite: (colorId: string) => void;
 }
@@ -23,6 +26,7 @@ export function Toolbar({
   selectedShape,
   selectedColor,
   selectedText,
+  selectedSize,
   colorHistory,
   darkMode,
   onToolChange,
@@ -30,6 +34,7 @@ export function Toolbar({
   onColorChange,
   onColorSelect,
   onTextChange,
+  onSizeChange,
   onToggleFavorite,
   onUnfavorite,
 }: ToolbarProps) {
@@ -79,45 +84,61 @@ export function Toolbar({
       </div>
 
       {currentTool === 'place' && (
-        <div>
-          <h3 className={`text-sm font-semibold mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>Shapes</h3>
-          <div className="grid grid-cols-3 gap-2 max-h-64 overflow-y-auto">
-            {shapes.map((shape) => (
-              <button
-                key={shape.type}
-                onClick={() => onShapeSelect(shape.type)}
-                className={`flex flex-col items-center justify-center p-2 rounded transition-colors ${
-                  selectedShape === shape.type
-                    ? 'bg-blue-600 text-white'
-                    : darkMode
-                    ? 'bg-gray-700 text-gray-200 hover:bg-gray-600'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                <span className="text-2xl mb-1">{shape.icon}</span>
-                <span className="text-xs">{shape.name}</span>
-              </button>
-            ))}
+        <>
+          <div>
+            <h3 className={`text-sm font-semibold mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>Shapes</h3>
+            <div className="grid grid-cols-3 gap-2 max-h-64 overflow-y-auto">
+              {shapes.map((shape) => (
+                <button
+                  key={shape.type}
+                  onClick={() => onShapeSelect(shape.type)}
+                  className={`flex flex-col items-center justify-center p-2 rounded transition-colors ${
+                    selectedShape === shape.type
+                      ? 'bg-blue-600 text-white'
+                      : darkMode
+                      ? 'bg-gray-700 text-gray-200 hover:bg-gray-600'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  <span className="text-2xl mb-1">{shape.icon}</span>
+                  <span className="text-xs">{shape.name}</span>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+
+          <SizeSelector
+            selectedSize={selectedSize}
+            onSizeChange={onSizeChange}
+            darkMode={darkMode}
+          />
+        </>
       )}
 
       {currentTool === 'text' && (
-        <div>
-          <h3 className={`text-sm font-semibold mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>Text Content</h3>
-          <input
-            type="text"
-            value={selectedText}
-            onChange={(e) => onTextChange(e.target.value)}
-            placeholder="Enter text or numbers"
-            className={`w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-center text-xl font-bold ${
-              darkMode
-                ? 'bg-gray-700 border-gray-600 text-gray-200'
-                : 'bg-white border-gray-300 text-gray-900'
-            }`}
+        <>
+          <div>
+            <h3 className={`text-sm font-semibold mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>Text Content</h3>
+            <input
+              type="text"
+              value={selectedText}
+              onChange={(e) => onTextChange(e.target.value)}
+              placeholder="Enter text or numbers"
+              className={`w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-center text-xl font-bold ${
+                darkMode
+                  ? 'bg-gray-700 border-gray-600 text-gray-200'
+                  : 'bg-white border-gray-300 text-gray-900'
+              }`}
+            />
+            <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Enter letters (A-Z, a-z) and numbers (0-9)</p>
+          </div>
+
+          <SizeSelector
+            selectedSize={selectedSize}
+            onSizeChange={onSizeChange}
+            darkMode={darkMode}
           />
-          <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Enter letters (A-Z, a-z) and numbers (0-9)</p>
-        </div>
+        </>
       )}
 
       {(currentTool === 'place' || currentTool === 'text') && (

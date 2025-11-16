@@ -57,11 +57,21 @@ export interface MapNote {
 
 export type Tool = 'select' | 'place' | 'erase' | 'text';
 
+export type SizeCategory = 'tiny' | 'small' | 'medium' | 'large' | 'huge' | 'gargantuan';
+
+export interface SizeDefinition {
+  name: string;
+  feet: string;
+  gridSquares: number;
+  description: string;
+}
+
 export interface EditorState {
   currentTool: Tool;
   selectedShape: ShapeType | null;
   selectedColor: string;
   selectedText: string;
+  selectedSize: SizeCategory;
   gridWidth: number;
   gridHeight: number;
   cellSize: number;

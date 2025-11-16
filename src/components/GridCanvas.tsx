@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { MapElement, Tool, ShapeType } from '../types';
+import { MapElement, Tool, ShapeType, SizeCategory } from '../types';
 import { getShapeDefinition } from '../lib/shapes';
+import { sizeDefinitions } from './SizeSelector';
 import { Clock, ZoomIn, ZoomOut, Grid3x3, Minus, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface GridCanvasProps {
@@ -12,6 +13,7 @@ interface GridCanvasProps {
   selectedShape: ShapeType | null;
   selectedColor: string;
   selectedText: string;
+  selectedSize: SizeCategory;
   timeOfDay: string;
   customTime: string;
   amPm: 'AM' | 'PM';
@@ -35,6 +37,7 @@ export function GridCanvas({
   selectedShape,
   selectedColor,
   selectedText,
+  selectedSize,
   timeOfDay,
   customTime,
   amPm,
@@ -139,26 +142,28 @@ export function GridCanvas({
     if (e.button === 0) {
       if (currentTool === 'place' && selectedShape) {
         const shapeDef = getShapeDefinition(selectedShape);
-        if (shapeDef) {
+        const sizeDef = sizeDefinitions[selectedSize];
+        if (shapeDef && sizeDef) {
           onAddElement({
             element_type: 'shape',
             grid_x: cell.x,
             grid_y: cell.y,
             shape_type: selectedShape,
             color: selectedColor,
-            width: shapeDef.defaultWidth,
-            height: shapeDef.defaultHeight,
+            width: sizeDef.gridSquares,
+            height: sizeDef.gridSquares,
           });
         }
       } else if (currentTool === 'text' && selectedText) {
+        const sizeDef = sizeDefinitions[selectedSize];
         onAddElement({
           element_type: 'text',
           grid_x: cell.x,
           grid_y: cell.y,
           text_content: selectedText,
           color: selectedColor,
-          width: 1,
-          height: 1,
+          width: sizeDef.gridSquares,
+          height: sizeDef.gridSquares,
         });
       }
     } else if (e.button === 2) {
