@@ -19,6 +19,8 @@ export interface MapElement {
   element_type: ElementType;
   grid_x: number;
   grid_y: number;
+  sub_x?: number;
+  sub_y?: number;
   shape_type?: ShapeType;
   text_content?: string;
   color: string;

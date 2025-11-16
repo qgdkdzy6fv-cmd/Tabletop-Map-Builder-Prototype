@@ -58,6 +58,7 @@ export function GridCanvas({
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState<{ x: number; y: number } | null>(null);
   const [isMenuMinimized, setIsMenuMinimized] = useState(false);
+  const [hoveredCell, setHoveredCell] = useState<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -83,9 +84,55 @@ export function GridCanvas({
       ctx.stroke();
     }
 
+    const sizeDef = sizeDefinitions[selectedSize];
+    const isTinyMode = sizeDef.gridSquares === 0.5;
+
+    if (isTinyMode && hoveredCell) {
+      const hx = hoveredCell.x * cellSize;
+      const hy = hoveredCell.y * cellSize;
+
+      ctx.strokeStyle = '#999';
+      ctx.lineWidth = 0.5;
+
+      ctx.beginPath();
+      ctx.moveTo(hx + cellSize / 2, hy);
+      ctx.lineTo(hx + cellSize / 2, hy + cellSize);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(hx, hy + cellSize / 2);
+      ctx.lineTo(hx + cellSize, hy + cellSize / 2);
+      ctx.stroke();
+
+      const tinyElements = elements.filter(
+        e => e.grid_x === hoveredCell.x && e.grid_y === hoveredCell.y && e.width === 0.5
+      );
+
+      for (let subY = 0; subY < 2; subY++) {
+        for (let subX = 0; subX < 2; subX++) {
+          const isOccupied = tinyElements.some(e => e.sub_x === subX && e.sub_y === subY);
+          if (!isOccupied) {
+            ctx.fillStyle = 'rgba(100, 200, 100, 0.1)';
+            ctx.fillRect(
+              hx + subX * (cellSize / 2),
+              hy + subY * (cellSize / 2),
+              cellSize / 2,
+              cellSize / 2
+            );
+          }
+        }
+      }
+    }
+
     elements.forEach((element) => {
-      const x = element.grid_x * cellSize;
-      const y = element.grid_y * cellSize;
+      let x = element.grid_x * cellSize;
+      let y = element.grid_y * cellSize;
+
+      if (element.sub_x !== undefined && element.sub_y !== undefined) {
+        x += element.sub_x * (cellSize / 2);
+        y += element.sub_y * (cellSize / 2);
+      }
+
       const w = element.width * cellSize;
       const h = element.height * cellSize;
 
@@ -107,10 +154,10 @@ export function GridCanvas({
         ctx.font = `bold ${fontSize}px Arial`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(element.text_content, x + cellSize / 2, y + cellSize / 2);
+        ctx.fillText(element.text_content, x + w / 2, y + h / 2);
       }
     });
-  }, [width, height, cellSize, elements]);
+  }, [width, height, cellSize, elements, selectedSize, hoveredCell]);
 
   const getCellFromEvent = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
@@ -122,6 +169,20 @@ export function GridCanvas({
 
     if (x < 0 || x >= width || y < 0 || y >= height) return null;
     return { x, y };
+  };
+
+  const getSubCellFromEvent = (e: React.MouseEvent<HTMLCanvasElement>, cell: { x: number; y: number }) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
+
+    const rect = canvas.getBoundingClientRect();
+    const offsetX = (e.clientX - rect.left) - (cell.x * cellSize);
+    const offsetY = (e.clientY - rect.top) - (cell.y * cellSize);
+
+    const subX = offsetX < cellSize / 2 ? 0 : 1;
+    const subY = offsetY < cellSize / 2 ? 0 : 1;
+
+    return { subX, subY };
   };
 
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -144,27 +205,109 @@ export function GridCanvas({
         const shapeDef = getShapeDefinition(selectedShape);
         const sizeDef = sizeDefinitions[selectedSize];
         if (shapeDef && sizeDef) {
+          const isTiny = sizeDef.gridSquares === 0.5;
+
+          if (isTiny) {
+            const tinyElements = elements.filter(
+              el => el.grid_x === cell.x && el.grid_y === cell.y && el.width === 0.5
+            );
+
+            if (tinyElements.length >= 4) {
+              return;
+            }
+
+            if (tinyElements.length > 0) {
+              const firstType = tinyElements[0].element_type === 'shape'
+                ? tinyElements[0].shape_type
+                : tinyElements[0].text_content;
+              if (firstType !== selectedShape) {
+                return;
+              }
+            }
+
+            const subCell = getSubCellFromEvent(e, cell);
+            if (!subCell) return;
+
+            const isOccupied = tinyElements.some(
+              el => el.sub_x === subCell.subX && el.sub_y === subCell.subY
+            );
+            if (isOccupied) return;
+
+            onAddElement({
+              element_type: 'shape',
+              grid_x: cell.x,
+              grid_y: cell.y,
+              sub_x: subCell.subX,
+              sub_y: subCell.subY,
+              shape_type: selectedShape,
+              color: selectedColor,
+              width: sizeDef.gridSquares,
+              height: sizeDef.gridSquares,
+            });
+          } else {
+            onAddElement({
+              element_type: 'shape',
+              grid_x: cell.x,
+              grid_y: cell.y,
+              shape_type: selectedShape,
+              color: selectedColor,
+              width: sizeDef.gridSquares,
+              height: sizeDef.gridSquares,
+            });
+          }
+        }
+      } else if (currentTool === 'text' && selectedText) {
+        const sizeDef = sizeDefinitions[selectedSize];
+        const isTiny = sizeDef.gridSquares === 0.5;
+
+        if (isTiny) {
+          const tinyElements = elements.filter(
+            el => el.grid_x === cell.x && el.grid_y === cell.y && el.width === 0.5
+          );
+
+          if (tinyElements.length >= 4) {
+            return;
+          }
+
+          if (tinyElements.length > 0) {
+            const firstType = tinyElements[0].element_type === 'text'
+              ? tinyElements[0].text_content
+              : tinyElements[0].shape_type;
+            if (firstType !== selectedText) {
+              return;
+            }
+          }
+
+          const subCell = getSubCellFromEvent(e, cell);
+          if (!subCell) return;
+
+          const isOccupied = tinyElements.some(
+            el => el.sub_x === subCell.subX && el.sub_y === subCell.subY
+          );
+          if (isOccupied) return;
+
           onAddElement({
-            element_type: 'shape',
+            element_type: 'text',
             grid_x: cell.x,
             grid_y: cell.y,
-            shape_type: selectedShape,
+            sub_x: subCell.subX,
+            sub_y: subCell.subY,
+            text_content: selectedText,
+            color: selectedColor,
+            width: sizeDef.gridSquares,
+            height: sizeDef.gridSquares,
+          });
+        } else {
+          onAddElement({
+            element_type: 'text',
+            grid_x: cell.x,
+            grid_y: cell.y,
+            text_content: selectedText,
             color: selectedColor,
             width: sizeDef.gridSquares,
             height: sizeDef.gridSquares,
           });
         }
-      } else if (currentTool === 'text' && selectedText) {
-        const sizeDef = sizeDefinitions[selectedSize];
-        onAddElement({
-          element_type: 'text',
-          grid_x: cell.x,
-          grid_y: cell.y,
-          text_content: selectedText,
-          color: selectedColor,
-          width: sizeDef.gridSquares,
-          height: sizeDef.gridSquares,
-        });
       }
     } else if (e.button === 2) {
       onRemoveElement(cell.x, cell.y);
@@ -172,6 +315,11 @@ export function GridCanvas({
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const cell = getCellFromEvent(e);
+    if (cell) {
+      setHoveredCell(cell);
+    }
+
     if (isPanning && panStart && containerRef.current) {
       const deltaX = e.clientX - panStart.x;
       const deltaY = e.clientY - panStart.y;
@@ -185,7 +333,6 @@ export function GridCanvas({
 
     if (!isDragging) return;
 
-    const cell = getCellFromEvent(e);
     if (!cell || (lastCell && cell.x === lastCell.x && cell.y === lastCell.y)) return;
 
     setLastCell(cell);
@@ -375,7 +522,10 @@ export function GridCanvas({
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
+        onMouseLeave={(e) => {
+          setHoveredCell(null);
+          handleMouseUp(e);
+        }}
         onContextMenu={handleContextMenu}
         className={`border ${isPanning ? 'cursor-grabbing' : 'cursor-crosshair'} ${
           darkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-300 bg-white'
