@@ -54,7 +54,7 @@ export function GridCanvas({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [lastCell, setLastCell] = useState<{ x: number; y: number } | null>(null);
+  const [lastCell, setLastCell] = useState<{ x: number; y: number; subX?: number; subY?: number } | null>(null);
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState<{ x: number; y: number } | null>(null);
   const [isMenuMinimized, setIsMenuMinimized] = useState(false);
@@ -362,22 +362,121 @@ export function GridCanvas({
 
     if (!isDragging) return;
 
-    if (!cell || (lastCell && cell.x === lastCell.x && cell.y === lastCell.y)) return;
+    const sizeDef = sizeDefinitions[selectedSize];
+    const isTiny = sizeDef.gridSquares === 0.5;
 
-    setLastCell(cell);
+    if (isTiny) {
+      const subCell = getSubCellFromEvent(e, cell);
+      if (!subCell) return;
+
+      if (lastCell && cell.x === lastCell.x && cell.y === lastCell.y &&
+          lastCell.subX === subCell.subX && lastCell.subY === subCell.subY) {
+        return;
+      }
+
+      setLastCell({ x: cell.x, y: cell.y, subX: subCell.subX, subY: subCell.subY });
+    } else {
+      if (!cell || (lastCell && cell.x === lastCell.x && cell.y === lastCell.y)) return;
+      setLastCell(cell);
+    }
 
     if (e.buttons === 1) {
       if (currentTool === 'place' && selectedShape) {
-        const shapeDef = getShapeDefinition(selectedShape);
-        if (shapeDef) {
+        if (isTiny) {
+          const tinyElements = elements.filter(
+            el => el.grid_x === cell.x && el.grid_y === cell.y && el.width === 0.5
+          );
+
+          if (tinyElements.length >= 4) {
+            return;
+          }
+
+          if (tinyElements.length > 0) {
+            const firstType = tinyElements[0].element_type === 'shape'
+              ? tinyElements[0].shape_type
+              : tinyElements[0].text_content;
+            if (firstType !== selectedShape) {
+              return;
+            }
+          }
+
+          const subCell = getSubCellFromEvent(e, cell);
+          if (!subCell) return;
+
+          const isOccupied = tinyElements.some(
+            el => el.sub_x === subCell.subX && el.sub_y === subCell.subY
+          );
+          if (isOccupied) return;
+
+          onAddElement({
+            element_type: 'shape',
+            grid_x: cell.x,
+            grid_y: cell.y,
+            sub_x: subCell.subX,
+            sub_y: subCell.subY,
+            shape_type: selectedShape,
+            color: selectedColor,
+            width: sizeDef.gridSquares,
+            height: sizeDef.gridSquares,
+          });
+        } else {
           onAddElement({
             element_type: 'shape',
             grid_x: cell.x,
             grid_y: cell.y,
             shape_type: selectedShape,
             color: selectedColor,
-            width: shapeDef.defaultWidth,
-            height: shapeDef.defaultHeight,
+            width: sizeDef.gridSquares,
+            height: sizeDef.gridSquares,
+          });
+        }
+      } else if (currentTool === 'text' && selectedText) {
+        if (isTiny) {
+          const tinyElements = elements.filter(
+            el => el.grid_x === cell.x && el.grid_y === cell.y && el.width === 0.5
+          );
+
+          if (tinyElements.length >= 4) {
+            return;
+          }
+
+          if (tinyElements.length > 0) {
+            const firstType = tinyElements[0].element_type === 'text'
+              ? tinyElements[0].text_content
+              : tinyElements[0].shape_type;
+            if (firstType !== selectedText) {
+              return;
+            }
+          }
+
+          const subCell = getSubCellFromEvent(e, cell);
+          if (!subCell) return;
+
+          const isOccupied = tinyElements.some(
+            el => el.sub_x === subCell.subX && el.sub_y === subCell.subY
+          );
+          if (isOccupied) return;
+
+          onAddElement({
+            element_type: 'text',
+            grid_x: cell.x,
+            grid_y: cell.y,
+            sub_x: subCell.subX,
+            sub_y: subCell.subY,
+            text_content: selectedText,
+            color: selectedColor,
+            width: sizeDef.gridSquares,
+            height: sizeDef.gridSquares,
+          });
+        } else {
+          onAddElement({
+            element_type: 'text',
+            grid_x: cell.x,
+            grid_y: cell.y,
+            text_content: selectedText,
+            color: selectedColor,
+            width: sizeDef.gridSquares,
+            height: sizeDef.gridSquares,
           });
         }
       }
