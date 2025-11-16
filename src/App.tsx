@@ -445,10 +445,41 @@ function App() {
     saveUserPreferences({ time_of_day: value, custom_time: newTime, am_pm: newAmPm });
   };
 
+  const getTimePeriodLabel = (time: string, period: 'AM' | 'PM'): string => {
+    const [hours, minutes] = time.split(':').map(Number);
+    let hour24 = hours;
+
+    if (period === 'PM' && hours !== 12) {
+      hour24 = hours + 12;
+    } else if (period === 'AM' && hours === 12) {
+      hour24 = 0;
+    }
+
+    if (hour24 >= 5 && hour24 <= 8) {
+      return 'Early Morning';
+    } else if (hour24 >= 9 && hour24 <= 11) {
+      return 'Mid-Morning';
+    } else if (hour24 === 12) {
+      return 'Noon';
+    } else if (hour24 >= 13 && hour24 <= 17) {
+      return 'Afternoon';
+    } else if (hour24 >= 18 && hour24 <= 20) {
+      return 'Evening';
+    } else if (hour24 >= 21 && hour24 <= 23) {
+      return 'Night';
+    } else {
+      return 'Late Night';
+    }
+  };
+
   const handleCustomTimeChange = (time: string, period: 'AM' | 'PM') => {
     setCustomTime(time);
     setAmPm(period);
-    saveUserPreferences({ custom_time: time, am_pm: period });
+
+    const timePeriod = getTimePeriodLabel(time, period);
+    setTimeOfDay(timePeriod);
+
+    saveUserPreferences({ custom_time: time, am_pm: period, time_of_day: timePeriod });
   };
 
   const handleZoomIn = () => {
