@@ -626,15 +626,6 @@ export function GridCanvas({
                   }`}
                   aria-label="Custom Time"
                 />
-                <div className={`mt-2 text-center py-2 px-3 rounded-lg ${
-                  darkMode ? 'bg-gray-700/50' : 'bg-gray-100'
-                }`}>
-                  <span className={`text-xs font-semibold ${
-                    darkMode ? 'text-blue-400' : 'text-blue-600'
-                  }`}>
-                    {timeOfDay}
-                  </span>
-                </div>
               </div>
             </>
           )}
