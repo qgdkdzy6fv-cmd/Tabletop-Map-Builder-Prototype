@@ -87,42 +87,66 @@ export function GridCanvas({
     const sizeDef = sizeDefinitions[selectedSize];
     const isTinyMode = sizeDef.gridSquares === 0.5;
 
-    if (isTinyMode && hoveredCell) {
+    if (hoveredCell && (currentTool === 'place' || currentTool === 'text')) {
       const hx = hoveredCell.x * cellSize;
       const hy = hoveredCell.y * cellSize;
+      const gridSquares = sizeDef.gridSquares;
 
-      ctx.strokeStyle = '#999';
-      ctx.lineWidth = 0.5;
+      if (isTinyMode) {
+        ctx.strokeStyle = '#999';
+        ctx.lineWidth = 0.5;
 
-      ctx.beginPath();
-      ctx.moveTo(hx + cellSize / 2, hy);
-      ctx.lineTo(hx + cellSize / 2, hy + cellSize);
-      ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(hx + cellSize / 2, hy);
+        ctx.lineTo(hx + cellSize / 2, hy + cellSize);
+        ctx.stroke();
 
-      ctx.beginPath();
-      ctx.moveTo(hx, hy + cellSize / 2);
-      ctx.lineTo(hx + cellSize, hy + cellSize / 2);
-      ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(hx, hy + cellSize / 2);
+        ctx.lineTo(hx + cellSize, hy + cellSize / 2);
+        ctx.stroke();
 
-      const tinyElements = elements.filter(
-        e => e.grid_x === hoveredCell.x && e.grid_y === hoveredCell.y && e.width === 0.5
-      );
+        const tinyElements = elements.filter(
+          e => e.grid_x === hoveredCell.x && e.grid_y === hoveredCell.y && e.width === 0.5
+        );
 
-      for (let subY = 0; subY < 2; subY++) {
-        for (let subX = 0; subX < 2; subX++) {
-          const isOccupied = tinyElements.some(e => e.sub_x === subX && e.sub_y === subY);
-          if (!isOccupied) {
-            ctx.fillStyle = 'rgba(100, 200, 100, 0.1)';
-            ctx.fillRect(
-              hx + subX * (cellSize / 2),
-              hy + subY * (cellSize / 2),
-              cellSize / 2,
-              cellSize / 2
-            );
+        for (let subY = 0; subY < 2; subY++) {
+          for (let subX = 0; subX < 2; subX++) {
+            const isOccupied = tinyElements.some(e => e.sub_x === subX && e.sub_y === subY);
+            if (!isOccupied) {
+              ctx.fillStyle = 'rgba(59, 130, 246, 0.15)';
+              ctx.fillRect(
+                hx + subX * (cellSize / 2),
+                hy + subY * (cellSize / 2),
+                cellSize / 2,
+                cellSize / 2
+              );
+            }
           }
         }
+      } else {
+        ctx.fillStyle = 'rgba(59, 130, 246, 0.15)';
+        ctx.strokeStyle = 'rgba(59, 130, 246, 0.5)';
+        ctx.lineWidth = 2;
+
+        const highlightWidth = gridSquares * cellSize;
+        const highlightHeight = gridSquares * cellSize;
+
+        ctx.fillRect(hx, hy, highlightWidth, highlightHeight);
+        ctx.strokeRect(hx, hy, highlightWidth, highlightHeight);
       }
     }
+
+    const tinyElementsBySquare = new Map<string, MapElement[]>();
+    elements.forEach((element) => {
+      if (element.width === 0.5) {
+        const key = `${element.grid_x},${element.grid_y}`;
+        if (!tinyElementsBySquare.has(key)) {
+          tinyElementsBySquare.set(key, []);
+        }
+        tinyElementsBySquare.get(key)!.push(element);
+      }
+    });
 
     elements.forEach((element) => {
       let x = element.grid_x * cellSize;
@@ -151,13 +175,60 @@ export function GridCanvas({
           fontSize = Math.max(cellSize * 0.4, cellSize * 0.6 / Math.sqrt(textLength));
         }
 
+        if (element.width === 0.5) {
+          fontSize = (cellSize / 2) * 0.5;
+        }
+
         ctx.font = `bold ${fontSize}px Arial`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(element.text_content, x + w / 2, y + h / 2);
       }
+
+      if (element.width === 0.5) {
+        const key = `${element.grid_x},${element.grid_y}`;
+        const tinyGroup = tinyElementsBySquare.get(key);
+
+        if (tinyGroup && tinyGroup.length > 1) {
+          const index = tinyGroup.findIndex(e => e.id === element.id);
+
+          ctx.save();
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+          ctx.beginPath();
+          ctx.arc(x + w - 8, y + 8, 7, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = 'white';
+          ctx.font = 'bold 10px Arial';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText((index + 1).toString(), x + w - 8, y + 8);
+          ctx.restore();
+        }
+      }
     });
-  }, [width, height, cellSize, elements, selectedSize, hoveredCell]);
+
+    tinyElementsBySquare.forEach((tinyGroup, key) => {
+      if (tinyGroup.length > 0) {
+        const [gx, gy] = key.split(',').map(Number);
+        const mainX = gx * cellSize;
+        const mainY = gy * cellSize;
+
+        ctx.save();
+        ctx.fillStyle = 'rgba(59, 130, 246, 0.8)';
+        ctx.beginPath();
+        ctx.arc(mainX + 12, mainY + 12, 10, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 11px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(tinyGroup.length.toString(), mainX + 12, mainY + 12);
+        ctx.restore();
+      }
+    });
+  }, [width, height, cellSize, elements, selectedSize, hoveredCell, currentTool]);
 
   const getCellFromEvent = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
