@@ -185,48 +185,6 @@ export function GridCanvas({
         ctx.fillText(element.text_content, x + w / 2, y + h / 2);
       }
 
-      if (element.width === 0.5) {
-        const key = `${element.grid_x},${element.grid_y}`;
-        const tinyGroup = tinyElementsBySquare.get(key);
-
-        if (tinyGroup && tinyGroup.length > 1) {
-          const index = tinyGroup.findIndex(e => e.id === element.id);
-
-          ctx.save();
-          ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-          ctx.beginPath();
-          ctx.arc(x + w - 8, y + 8, 7, 0, Math.PI * 2);
-          ctx.fill();
-
-          ctx.fillStyle = 'white';
-          ctx.font = 'bold 10px Arial';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText((index + 1).toString(), x + w - 8, y + 8);
-          ctx.restore();
-        }
-      }
-    });
-
-    tinyElementsBySquare.forEach((tinyGroup, key) => {
-      if (tinyGroup.length > 0) {
-        const [gx, gy] = key.split(',').map(Number);
-        const mainX = gx * cellSize;
-        const mainY = gy * cellSize;
-
-        ctx.save();
-        ctx.fillStyle = 'rgba(59, 130, 246, 0.8)';
-        ctx.beginPath();
-        ctx.arc(mainX + 12, mainY + 12, 10, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = 'white';
-        ctx.font = 'bold 11px Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(tinyGroup.length.toString(), mainX + 12, mainY + 12);
-        ctx.restore();
-      }
     });
   }, [width, height, cellSize, elements, selectedSize, hoveredCell, currentTool]);
 
