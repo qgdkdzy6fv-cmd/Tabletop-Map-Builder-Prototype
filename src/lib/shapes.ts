@@ -240,6 +240,19 @@ export const shapes: ShapeDefinition[] = [
       }
     },
   },
+  {
+    type: 'food',
+    name: 'Food',
+    icon: '🍴',
+    defaultWidth: 1,
+    defaultHeight: 1,
+    render: (ctx, x, y, width, height, color) => {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(x + width * 0.5, y + height * 0.5, Math.min(width, height) * 0.35, 0, Math.PI * 2);
+      ctx.fill();
+    },
+  },
 ];
 
 export const getShapeDefinition = (type: ShapeType): ShapeDefinition | undefined => {
