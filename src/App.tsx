@@ -649,6 +649,7 @@ function App() {
               onSaveNote={handleSaveNote}
               onLoadNote={handleLoadNote}
               onNewNote={handleNewNote}
+              darkMode={darkMode}
             />
             <button
               onClick={() => setExportDialogOpen(true)}

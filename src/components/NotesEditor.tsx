@@ -5,9 +5,10 @@ import { Type, Heading1, Heading2, List, Trash2 } from 'lucide-react';
 interface NotesEditorProps {
   content: NoteBlock[];
   onChange: (content: NoteBlock[]) => void;
+  darkMode?: boolean;
 }
 
-export function NotesEditor({ content, onChange }: NotesEditorProps) {
+export function NotesEditor({ content, onChange, darkMode = false }: NotesEditorProps) {
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
 
   const addBlock = (type: NoteBlock['type']) => {
@@ -77,28 +78,36 @@ export function NotesEditor({ content, onChange }: NotesEditorProps) {
       <div className="flex gap-2 flex-wrap">
         <button
           onClick={() => addBlock('title')}
-          className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded transition-colors text-sm"
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm ${
+            darkMode ? 'bg-gray-700 hover:bg-gray-600 text-gray-200' : 'bg-gray-100 hover:bg-gray-200'
+          }`}
         >
           <Heading1 className="w-4 h-4" />
           Title
         </button>
         <button
           onClick={() => addBlock('header')}
-          className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded transition-colors text-sm"
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm ${
+            darkMode ? 'bg-gray-700 hover:bg-gray-600 text-gray-200' : 'bg-gray-100 hover:bg-gray-200'
+          }`}
         >
           <Heading2 className="w-4 h-4" />
           Header
         </button>
         <button
           onClick={() => addBlock('body')}
-          className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded transition-colors text-sm"
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm ${
+            darkMode ? 'bg-gray-700 hover:bg-gray-600 text-gray-200' : 'bg-gray-100 hover:bg-gray-200'
+          }`}
         >
           <Type className="w-4 h-4" />
           Body
         </button>
         <button
           onClick={() => addBlock('bullet')}
-          className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded transition-colors text-sm"
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm ${
+            darkMode ? 'bg-gray-700 hover:bg-gray-600 text-gray-200' : 'bg-gray-100 hover:bg-gray-200'
+          }`}
         >
           <List className="w-4 h-4" />
           Bullet
@@ -110,7 +119,13 @@ export function NotesEditor({ content, onChange }: NotesEditorProps) {
           <div
             key={block.id}
             className={`border rounded-lg p-3 transition-colors ${
-              selectedBlockId === block.id ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
+              selectedBlockId === block.id
+                ? darkMode
+                  ? 'border-blue-500 bg-blue-900/30'
+                  : 'border-blue-500 bg-blue-50'
+                : darkMode
+                ? 'border-gray-700 bg-gray-800/50'
+                : 'border-gray-300'
             }`}
             onClick={() => setSelectedBlockId(block.id)}
           >
@@ -123,7 +138,11 @@ export function NotesEditor({ content, onChange }: NotesEditorProps) {
                       value={block.content}
                       onChange={(e) => updateBlock(block.id, { content: e.target.value })}
                       placeholder="Enter text..."
-                      className="flex-1 px-2 py-1 border border-gray-300 rounded resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className={`flex-1 px-2 py-1 border rounded resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        darkMode
+                          ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-500'
+                          : 'border-gray-300'
+                      }`}
                       rows={2}
                       style={getBlockStyle(block)}
                     />
@@ -133,7 +152,11 @@ export function NotesEditor({ content, onChange }: NotesEditorProps) {
                     value={block.content}
                     onChange={(e) => updateBlock(block.id, { content: e.target.value })}
                     placeholder="Enter text..."
-                    className="w-full px-2 py-1 border border-gray-300 rounded resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`w-full px-2 py-1 border rounded resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      darkMode
+                        ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-500'
+                        : 'border-gray-300'
+                    }`}
                     rows={block.type === 'title' ? 1 : 2}
                     style={getBlockStyle(block)}
                   />
@@ -145,7 +168,9 @@ export function NotesEditor({ content, onChange }: NotesEditorProps) {
                     e.stopPropagation();
                     moveBlock(block.id, 'up');
                   }}
-                  className="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded text-xs"
+                  className={`px-2 py-1 rounded text-xs ${
+                    darkMode ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' : 'bg-gray-100 hover:bg-gray-200'
+                  }`}
                 >
                   ↑
                 </button>
@@ -154,7 +179,9 @@ export function NotesEditor({ content, onChange }: NotesEditorProps) {
                     e.stopPropagation();
                     moveBlock(block.id, 'down');
                   }}
-                  className="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded text-xs"
+                  className={`px-2 py-1 rounded text-xs ${
+                    darkMode ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' : 'bg-gray-100 hover:bg-gray-200'
+                  }`}
                 >
                   ↓
                 </button>
@@ -163,7 +190,11 @@ export function NotesEditor({ content, onChange }: NotesEditorProps) {
                     e.stopPropagation();
                     deleteBlock(block.id);
                   }}
-                  className="px-2 py-1 bg-red-100 hover:bg-red-200 text-red-600 rounded"
+                  className={`px-2 py-1 rounded ${
+                    darkMode
+                      ? 'bg-red-900/50 hover:bg-red-900/70 text-red-400'
+                      : 'bg-red-100 hover:bg-red-200 text-red-600'
+                  }`}
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -171,11 +202,17 @@ export function NotesEditor({ content, onChange }: NotesEditorProps) {
             </div>
 
             {selectedBlockId === block.id && (
-              <div className="flex gap-2 items-center pt-2 border-t">
+              <div className={`flex gap-2 items-center pt-2 border-t ${
+                darkMode ? 'border-gray-700' : 'border-gray-200'
+              }`}>
                 <select
                   value={block.fontFamily || 'Arial'}
                   onChange={(e) => updateBlock(block.id, { fontFamily: e.target.value })}
-                  className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`px-2 py-1 border rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    darkMode
+                      ? 'bg-gray-700 border-gray-600 text-gray-200'
+                      : 'border-gray-300'
+                  }`}
                 >
                   {fontFamilies.map((font) => (
                     <option key={font} value={font}>
@@ -187,7 +224,9 @@ export function NotesEditor({ content, onChange }: NotesEditorProps) {
                   type="color"
                   value={block.color || '#000000'}
                   onChange={(e) => updateBlock(block.id, { color: e.target.value })}
-                  className="w-8 h-8 border border-gray-300 rounded cursor-pointer"
+                  className={`w-8 h-8 border rounded cursor-pointer ${
+                    darkMode ? 'border-gray-600' : 'border-gray-300'
+                  }`}
                 />
               </div>
             )}
@@ -196,7 +235,7 @@ export function NotesEditor({ content, onChange }: NotesEditorProps) {
       </div>
 
       {content.length === 0 && (
-        <p className="text-gray-500 text-center py-8">
+        <p className={`text-center py-8 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
           Click a button above to add text blocks to your notes
         </p>
       )}
