@@ -35,6 +35,7 @@ function App() {
   const [cellSize, setCellSize] = useState(40);
 
   const [elements, setElements] = useState<MapElement[]>([]);
+  const [selectedElementIds, setSelectedElementIds] = useState<string[]>([]);
   const [currentMapId, setCurrentMapId] = useState<string | null>(null);
   const [currentMapName, setCurrentMapName] = useState('Untitled Map');
   const [maps, setMaps] = useState<Map[]>([]);
@@ -188,6 +189,34 @@ function App() {
         await supabase.from('map_elements').delete().eq('id', element.id);
       }
       setElements((prev) => prev.filter((e) => e.id !== element.id));
+      setSelectedElementIds((prev) => prev.filter((id) => id !== element.id));
+    }
+  };
+
+  const handleMoveElements = async (elementIds: string[], deltaX: number, deltaY: number) => {
+    const updatedElements = elements.map((el) => {
+      if (elementIds.includes(el.id)) {
+        return {
+          ...el,
+          grid_x: el.grid_x + deltaX,
+          grid_y: el.grid_y + deltaY,
+        };
+      }
+      return el;
+    });
+
+    setElements(updatedElements);
+
+    if (currentMapId) {
+      for (const id of elementIds) {
+        const element = updatedElements.find((e) => e.id === id);
+        if (element && element.map_id !== 'temp') {
+          await supabase
+            .from('map_elements')
+            .update({ grid_x: element.grid_x, grid_y: element.grid_y })
+            .eq('id', id);
+        }
+      }
     }
   };
 
@@ -268,6 +297,7 @@ function App() {
     setCurrentMapId(null);
     setCurrentMapName('Untitled Map');
     setElements([]);
+    setSelectedElementIds([]);
     setGridWidth(30);
     setGridHeight(20);
   };
@@ -290,6 +320,7 @@ function App() {
   const handleResetConfirm = () => {
     setResetConfirmOpen(false);
     setElements([]);
+    setSelectedElementIds([]);
   };
 
   const handleSaveNote = async (
@@ -722,6 +753,7 @@ function App() {
               height={gridHeight}
               cellSize={cellSize}
               elements={elements}
+              selectedElementIds={selectedElementIds}
               currentTool={currentTool}
               selectedShape={selectedShape}
               selectedColor={selectedColor}
@@ -733,6 +765,8 @@ function App() {
               darkMode={darkMode}
               onAddElement={handleAddElement}
               onRemoveElement={handleRemoveElement}
+              onMoveElements={handleMoveElements}
+              onSelectElements={setSelectedElementIds}
               onTimeOfDayChange={handleTimeOfDayChange}
               onCustomTimeChange={handleCustomTimeChange}
               onZoomIn={handleZoomIn}

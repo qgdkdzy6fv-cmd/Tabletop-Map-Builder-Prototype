@@ -9,6 +9,7 @@ interface GridCanvasProps {
   height: number;
   cellSize: number;
   elements: MapElement[];
+  selectedElementIds: string[];
   currentTool: Tool;
   selectedShape: ShapeType | null;
   selectedColor: string;
@@ -20,6 +21,8 @@ interface GridCanvasProps {
   darkMode: boolean;
   onAddElement: (element: Omit<MapElement, 'id' | 'map_id' | 'created_at'>) => void;
   onRemoveElement: (x: number, y: number) => void;
+  onMoveElements: (elementIds: string[], deltaX: number, deltaY: number) => void;
+  onSelectElements: (elementIds: string[]) => void;
   onTimeOfDayChange: (value: string) => void;
   onCustomTimeChange: (time: string, period: 'AM' | 'PM') => void;
   onZoomIn: () => void;
@@ -33,6 +36,7 @@ export function GridCanvas({
   height,
   cellSize,
   elements,
+  selectedElementIds,
   currentTool,
   selectedShape,
   selectedColor,
@@ -44,6 +48,8 @@ export function GridCanvas({
   darkMode,
   onAddElement,
   onRemoveElement,
+  onMoveElements,
+  onSelectElements,
   onTimeOfDayChange,
   onCustomTimeChange,
   onZoomIn,
@@ -59,6 +65,8 @@ export function GridCanvas({
   const [panStart, setPanStart] = useState<{ x: number; y: number } | null>(null);
   const [isMenuMinimized, setIsMenuMinimized] = useState(false);
   const [hoveredCell, setHoveredCell] = useState<{ x: number; y: number } | null>(null);
+  const [isDraggingSelection, setIsDraggingSelection] = useState(false);
+  const [dragStartCell, setDragStartCell] = useState<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -185,8 +193,15 @@ export function GridCanvas({
         ctx.fillText(element.text_content, x + w / 2, y + h / 2);
       }
 
+      if (selectedElementIds.includes(element.id)) {
+        ctx.strokeStyle = '#3b82f6';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([5, 5]);
+        ctx.strokeRect(x - 2, y - 2, w + 4, h + 4);
+        ctx.setLineDash([]);
+      }
     });
-  }, [width, height, cellSize, elements, selectedSize, hoveredCell, currentTool]);
+  }, [width, height, cellSize, elements, selectedSize, hoveredCell, currentTool, selectedElementIds]);
 
   const getCellFromEvent = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
@@ -225,6 +240,35 @@ export function GridCanvas({
 
     const cell = getCellFromEvent(e);
     if (!cell) return;
+
+    if (currentTool === 'select') {
+      const clickedElement = elements.find(
+        (el) => el.grid_x === cell.x && el.grid_y === cell.y
+      );
+
+      if (clickedElement) {
+        const isMultiSelect = e.ctrlKey || e.metaKey;
+
+        if (isMultiSelect) {
+          if (selectedElementIds.includes(clickedElement.id)) {
+            onSelectElements(selectedElementIds.filter((id) => id !== clickedElement.id));
+          } else {
+            onSelectElements([...selectedElementIds, clickedElement.id]);
+          }
+        } else {
+          if (!selectedElementIds.includes(clickedElement.id)) {
+            onSelectElements([clickedElement.id]);
+          }
+          setIsDraggingSelection(true);
+          setDragStartCell(cell);
+        }
+      } else {
+        if (!e.ctrlKey && !e.metaKey) {
+          onSelectElements([]);
+        }
+      }
+      return;
+    }
 
     setIsDragging(true);
     setLastCell(cell);
@@ -360,6 +404,17 @@ export function GridCanvas({
       return;
     }
 
+    if (isDraggingSelection && dragStartCell && cell && selectedElementIds.length > 0) {
+      const deltaX = cell.x - dragStartCell.x;
+      const deltaY = cell.y - dragStartCell.y;
+
+      if (deltaX !== 0 || deltaY !== 0) {
+        onMoveElements(selectedElementIds, deltaX, deltaY);
+        setDragStartCell(cell);
+      }
+      return;
+    }
+
     if (!isDragging) return;
 
     const sizeDef = sizeDefinitions[selectedSize];
@@ -490,6 +545,8 @@ export function GridCanvas({
     setLastCell(null);
     setIsPanning(false);
     setPanStart(null);
+    setIsDraggingSelection(false);
+    setDragStartCell(null);
   };
 
   const handleContextMenu = (e: React.MouseEvent) => {
@@ -655,7 +712,15 @@ export function GridCanvas({
           handleMouseUp(e);
         }}
         onContextMenu={handleContextMenu}
-        className={`border ${isPanning ? 'cursor-grabbing' : 'cursor-crosshair'} ${
+        className={`border ${
+          isPanning
+            ? 'cursor-grabbing'
+            : currentTool === 'select'
+            ? isDraggingSelection
+              ? 'cursor-grabbing'
+              : 'cursor-pointer'
+            : 'cursor-crosshair'
+        } ${
           darkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-300 bg-white'
         }`}
       />
