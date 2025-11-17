@@ -17,7 +17,7 @@ export function NotesEditor({ content, onChange, darkMode = false }: NotesEditor
       type,
       content: '',
       fontFamily: 'Arial',
-      color: '#000000',
+      color: darkMode ? '#ffffff' : '#000000',
     };
     onChange([...content, newBlock]);
     setSelectedBlockId(newBlock.id);
