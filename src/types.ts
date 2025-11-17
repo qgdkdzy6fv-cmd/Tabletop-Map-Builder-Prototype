@@ -27,7 +27,8 @@ export type ShapeType =
   | 'trap'
   | 'bridge'
   | 'pit'
-  | 'food';
+  | 'food'
+  | 'farm';
 
 export interface MapElement {
   id: string;

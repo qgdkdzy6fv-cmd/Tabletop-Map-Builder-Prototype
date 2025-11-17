@@ -253,6 +253,26 @@ export const shapes: ShapeDefinition[] = [
       ctx.fill();
     },
   },
+  {
+    type: 'farm',
+    name: 'Farm',
+    icon: '🌾',
+    defaultWidth: 2,
+    defaultHeight: 2,
+    render: (ctx, x, y, width, height, color) => {
+      ctx.fillStyle = color;
+      ctx.fillRect(x, y, width, height);
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 1;
+      for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+          const cellX = x + (width / 3) * i;
+          const cellY = y + (height / 3) * j;
+          ctx.strokeRect(cellX, cellY, width / 3, height / 3);
+        }
+      }
+    },
+  },
 ];
 
 export const getShapeDefinition = (type: ShapeType): ShapeDefinition | undefined => {
