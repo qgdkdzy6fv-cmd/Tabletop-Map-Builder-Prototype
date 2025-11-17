@@ -274,21 +274,38 @@ export const shapes: ShapeDefinition[] = [
     },
   },
   {
-    type: 'camp-site',
+    type: 'campsite',
     name: 'Camp Site',
     icon: '⛺',
     defaultWidth: 2,
     defaultHeight: 2,
     render: (ctx, x, y, width, height, color) => {
+      const centerX = x + width * 0.5;
+      const centerY = y + height * 0.5;
+      const size = Math.min(width, height);
+
+      // Draw tree trunk
+      ctx.fillStyle = '#8B4513';
+      const trunkWidth = size * 0.08;
+      const trunkHeight = size * 0.3;
+      ctx.fillRect(centerX - trunkWidth / 2 - size * 0.15, centerY - trunkHeight / 2, trunkWidth, trunkHeight);
+
+      // Draw tree foliage
+      ctx.fillStyle = '#228B22';
+      ctx.beginPath();
+      ctx.arc(centerX - size * 0.15, centerY - size * 0.1, size * 0.15, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Draw tent
       ctx.fillStyle = color;
       ctx.beginPath();
-      ctx.moveTo(x + width * 0.5, y + height * 0.2);
-      ctx.lineTo(x + width * 0.8, y + height * 0.8);
-      ctx.lineTo(x + width * 0.2, y + height * 0.8);
+      ctx.moveTo(centerX + size * 0.15, centerY - size * 0.15);
+      ctx.lineTo(centerX + size * 0.05, centerY + size * 0.15);
+      ctx.lineTo(centerX + size * 0.25, centerY + size * 0.15);
       ctx.closePath();
       ctx.fill();
       ctx.strokeStyle = '#000000';
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 1;
       ctx.stroke();
     },
   },
