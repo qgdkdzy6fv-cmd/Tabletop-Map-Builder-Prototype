@@ -26,7 +26,7 @@ function App() {
 
   const [currentTool, setCurrentTool] = useState<Tool>('place');
   const [selectedShape, setSelectedShape] = useState<ShapeType>('wall');
-  const [selectedColor, setSelectedColor] = useState('#000000');
+  const [selectedColor, setSelectedColor] = useState('#ffffff');
   const [selectedText, setSelectedText] = useState('');
   const [selectedSize, setSelectedSize] = useState<SizeCategory>('medium');
 
@@ -396,9 +396,12 @@ function App() {
 
     if (data) {
       setDarkMode(data.dark_mode);
+      setSelectedColor(data.dark_mode ? '#ffffff' : '#000000');
       setTimeOfDay(data.time_of_day);
       setCustomTime(data.custom_time);
       setAmPm(data.am_pm as 'AM' | 'PM');
+    } else {
+      setSelectedColor('#000000');
     }
   };
 
@@ -434,6 +437,7 @@ function App() {
   const toggleDarkMode = () => {
     const newDarkMode = !darkMode;
     setDarkMode(newDarkMode);
+    setSelectedColor(newDarkMode ? '#ffffff' : '#000000');
     saveUserPreferences({ dark_mode: newDarkMode });
   };
 
