@@ -40,7 +40,7 @@ export function Toolbar({
 }: ToolbarProps) {
   const tools = [
     { id: 'select' as Tool, icon: MousePointer, label: 'Select' },
-    { id: 'place' as Tool, icon: Square, label: 'Place Shape' },
+    { id: 'place' as Tool, icon: Square, label: 'Icons' },
     { id: 'text' as Tool, icon: Type, label: 'Place Text' },
     { id: 'erase' as Tool, icon: Eraser, label: 'Erase' },
   ];
