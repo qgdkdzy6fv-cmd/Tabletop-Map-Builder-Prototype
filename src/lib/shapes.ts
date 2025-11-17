@@ -45,6 +45,72 @@ export const shapes: ShapeDefinition[] = [
     },
   },
   {
+    type: 'door-closed',
+    name: 'Door Closed',
+    icon: '🚪',
+    defaultWidth: 1,
+    defaultHeight: 1,
+    render: (ctx, x, y, width, height, color) => {
+      ctx.fillStyle = color;
+      ctx.fillRect(x + width * 0.1, y + height * 0.05, width * 0.8, height * 0.9);
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x + width * 0.1, y + height * 0.05, width * 0.8, height * 0.9);
+      ctx.fillStyle = '#FFD700';
+      ctx.beginPath();
+      ctx.arc(x + width * 0.75, y + height * 0.5, width * 0.05, 0, Math.PI * 2);
+      ctx.fill();
+    },
+  },
+  {
+    type: 'door-closed-locked',
+    name: 'Door Locked',
+    icon: '🔒',
+    defaultWidth: 1,
+    defaultHeight: 1,
+    render: (ctx, x, y, width, height, color) => {
+      ctx.fillStyle = color;
+      ctx.fillRect(x + width * 0.1, y + height * 0.05, width * 0.8, height * 0.9);
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x + width * 0.1, y + height * 0.05, width * 0.8, height * 0.9);
+      ctx.fillStyle = '#FFD700';
+      ctx.fillRect(x + width * 0.4, y + height * 0.45, width * 0.2, height * 0.15);
+      ctx.beginPath();
+      ctx.arc(x + width * 0.5, y + height * 0.45, width * 0.1, Math.PI, 0, true);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#FFD700';
+      ctx.stroke();
+    },
+  },
+  {
+    type: 'door-open',
+    name: 'Door Open',
+    icon: '📂',
+    defaultWidth: 1,
+    defaultHeight: 1,
+    render: (ctx, x, y, width, height, color) => {
+      ctx.save();
+      ctx.fillStyle = color;
+      ctx.fillRect(x + width * 0.05, y + height * 0.05, width * 0.15, height * 0.9);
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x + width * 0.05, y + height * 0.05, width * 0.15, height * 0.9);
+      ctx.translate(x + width * 0.2, y + height * 0.5);
+      ctx.rotate(-Math.PI / 4);
+      ctx.fillRect(-width * 0.05, -height * 0.45, width * 0.1, height * 0.9);
+      ctx.strokeRect(-width * 0.05, -height * 0.45, width * 0.1, height * 0.9);
+      ctx.restore();
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.arc(x + width * 0.2, y + height * 0.5, width * 0.5, -Math.PI / 4, Math.PI / 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    },
+  },
+  {
     type: 'window',
     name: 'Window',
     icon: '▢',

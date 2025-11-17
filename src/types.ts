@@ -3,6 +3,9 @@ export type ElementType = 'shape' | 'text';
 export type ShapeType =
   | 'wall'
   | 'door'
+  | 'door-closed'
+  | 'door-closed-locked'
+  | 'door-open'
   | 'window'
   | 'table'
   | 'chair'
@@ -11,7 +14,19 @@ export type ShapeType =
   | 'tree'
   | 'rock'
   | 'water'
-  | 'stairs';
+  | 'stairs'
+  | 'pillar'
+  | 'torch'
+  | 'altar'
+  | 'bookshelf'
+  | 'barrel'
+  | 'crate'
+  | 'campfire'
+  | 'fountain'
+  | 'statue'
+  | 'trap'
+  | 'bridge'
+  | 'pit';
 
 export interface MapElement {
   id: string;
