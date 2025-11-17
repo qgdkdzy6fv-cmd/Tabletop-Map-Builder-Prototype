@@ -274,6 +274,11 @@ export function GridCanvas({
     setLastCell(cell);
 
     if (e.button === 0) {
+      if (currentTool === 'erase') {
+        onRemoveElement(cell.x, cell.y);
+        return;
+      }
+
       if (currentTool === 'place' && selectedShape) {
         const shapeDef = getShapeDefinition(selectedShape);
         const sizeDef = sizeDefinitions[selectedSize];
@@ -436,6 +441,11 @@ export function GridCanvas({
     }
 
     if (e.buttons === 1) {
+      if (currentTool === 'erase') {
+        onRemoveElement(cell.x, cell.y);
+        return;
+      }
+
       if (currentTool === 'place' && selectedShape) {
         if (isTiny) {
           const tinyElements = elements.filter(
@@ -719,6 +729,8 @@ export function GridCanvas({
             ? isDraggingSelection
               ? 'cursor-grabbing'
               : 'cursor-pointer'
+            : currentTool === 'erase'
+            ? 'cursor-not-allowed'
             : 'cursor-crosshair'
         } ${
           darkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-300 bg-white'
