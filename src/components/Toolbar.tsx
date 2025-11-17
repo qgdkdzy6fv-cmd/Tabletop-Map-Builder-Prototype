@@ -86,7 +86,7 @@ export function Toolbar({
       {currentTool === 'place' && (
         <>
           <div>
-            <h3 className={`text-sm font-semibold mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>Shapes</h3>
+            <h3 className={`text-sm font-semibold mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>Icons</h3>
             <div className="grid grid-cols-3 gap-2 max-h-64 overflow-y-auto">
               {shapes.map((shape) => (
                 <button
