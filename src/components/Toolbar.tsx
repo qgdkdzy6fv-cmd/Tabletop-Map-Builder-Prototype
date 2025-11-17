@@ -1,6 +1,6 @@
 import { Tool, ShapeType, ColorHistoryEntry, SizeCategory } from '../types';
 import { shapes } from '../lib/shapes';
-import { MousePointer, Square, Eraser, Type, Star, X, DoorClosed, LockKeyhole } from 'lucide-react';
+import { MousePointer, Square, Eraser, Type, Star, X, DoorClosed, DoorClosedLocked } from 'lucide-react';
 import { SizeSelector } from './SizeSelector';
 
 interface ToolbarProps {
@@ -103,7 +103,7 @@ export function Toolbar({
                   {shape.type === 'door-closed' ? (
                     <DoorClosed className="w-6 h-6 mb-1" />
                   ) : shape.type === 'door-closed-locked' ? (
-                    <LockKeyhole className="w-6 h-6 mb-1" />
+                    <DoorClosedLocked className="w-6 h-6 mb-1" />
                   ) : (
                     <span className="text-2xl mb-1">{shape.icon}</span>
                   )}
