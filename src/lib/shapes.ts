@@ -29,22 +29,6 @@ export const shapes: ShapeDefinition[] = [
     },
   },
   {
-    type: 'door',
-    name: 'Door',
-    icon: '⌂',
-    defaultWidth: 1,
-    defaultHeight: 1,
-    render: (ctx, x, y, width, height, color) => {
-      ctx.fillStyle = color;
-      ctx.fillRect(x, y, width, height);
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(x + width * 0.2, y + height * 0.2, Math.min(width, height) * 0.3, 0, Math.PI / 2);
-      ctx.stroke();
-    },
-  },
-  {
     type: 'door-closed',
     name: 'Door Closed',
     icon: '🚪',
