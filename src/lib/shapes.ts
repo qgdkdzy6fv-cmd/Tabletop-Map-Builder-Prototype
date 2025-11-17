@@ -273,6 +273,25 @@ export const shapes: ShapeDefinition[] = [
       }
     },
   },
+  {
+    type: 'camp-site',
+    name: 'Camp Site',
+    icon: '⛺',
+    defaultWidth: 2,
+    defaultHeight: 2,
+    render: (ctx, x, y, width, height, color) => {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(x + width * 0.5, y + height * 0.2);
+      ctx.lineTo(x + width * 0.8, y + height * 0.8);
+      ctx.lineTo(x + width * 0.2, y + height * 0.8);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    },
+  },
 ];
 
 export const getShapeDefinition = (type: ShapeType): ShapeDefinition | undefined => {

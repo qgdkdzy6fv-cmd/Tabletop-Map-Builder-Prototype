@@ -1,6 +1,6 @@
 import { Tool, ShapeType, ColorHistoryEntry, SizeCategory } from '../types';
 import { shapes } from '../lib/shapes';
-import { MousePointer, Square, Eraser, Type, Star, X, DoorClosed, DoorClosedLocked, DoorOpen, Grid2x2, Bed, Utensils, Wheat, TreeDeciduous } from 'lucide-react';
+import { MousePointer, Square, Eraser, Type, Star, X, DoorClosed, DoorClosedLocked, DoorOpen, Grid2x2, Bed, Utensils, Wheat, TreeDeciduous, TentTree } from 'lucide-react';
 import { SizeSelector } from './SizeSelector';
 
 interface ToolbarProps {
@@ -116,6 +116,8 @@ export function Toolbar({
                     <Wheat className="w-6 h-6 mb-1" />
                   ) : shape.type === 'tree' ? (
                     <TreeDeciduous className="w-6 h-6 mb-1" />
+                  ) : shape.type === 'camp-site' ? (
+                    <TentTree className="w-6 h-6 mb-1" />
                   ) : (
                     <span className="text-2xl mb-1">{shape.icon}</span>
                   )}
