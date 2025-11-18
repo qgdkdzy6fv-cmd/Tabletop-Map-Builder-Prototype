@@ -18,7 +18,7 @@ import {
   NoteBlock,
   ColorHistoryEntry,
 } from './types';
-import { Download, RotateCcw, LogOut, Moon, Sun, ZoomIn, ZoomOut } from 'lucide-react';
+import { Download, RotateCcw, LogOut, Moon, Sun, ZoomIn, ZoomOut, Edit2, Check } from 'lucide-react';
 
 function App() {
   const [user, setUser] = useState<any>(null);
@@ -55,6 +55,8 @@ function App() {
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
   const [newMapConfirmOpen, setNewMapConfirmOpen] = useState(false);
   const [newMapSaveName, setNewMapSaveName] = useState('');
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editedMapName, setEditedMapName] = useState('');
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -218,6 +220,38 @@ function App() {
         }
       }
     }
+  };
+
+  const handleUpdateMapName = async (name: string) => {
+    if (!name.trim()) return;
+
+    setCurrentMapName(name);
+
+    if (currentMapId) {
+      await supabase
+        .from('maps')
+        .update({ name, updated_at: new Date().toISOString() })
+        .eq('id', currentMapId);
+
+      loadMaps();
+    }
+  };
+
+  const handleStartEditTitle = () => {
+    setEditedMapName(currentMapName);
+    setIsEditingTitle(true);
+  };
+
+  const handleSaveTitle = async () => {
+    if (editedMapName.trim()) {
+      await handleUpdateMapName(editedMapName.trim());
+    }
+    setIsEditingTitle(false);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingTitle(false);
+    setEditedMapName('');
   };
 
   const handleSaveMap = async (name: string) => {
@@ -639,7 +673,59 @@ function App() {
               <h1 className={`text-3xl font-bold mb-1 ${darkMode ? 'text-gray-100' : 'text-gray-800'}`}>
                 Tabletop Map Builder
               </h1>
-              <p className={darkMode ? 'text-gray-300' : 'text-gray-600'}>{currentMapName}</p>
+              <div className="flex items-center gap-2">
+                {isEditingTitle ? (
+                  <>
+                    <input
+                      type="text"
+                      value={editedMapName}
+                      onChange={(e) => setEditedMapName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleSaveTitle();
+                        if (e.key === 'Escape') handleCancelEdit();
+                      }}
+                      className={`px-2 py-1 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        darkMode
+                          ? 'bg-gray-700 border-gray-600 text-gray-200'
+                          : 'bg-white border-gray-300 text-gray-900'
+                      }`}
+                      autoFocus
+                    />
+                    <button
+                      onClick={handleSaveTitle}
+                      className="p-1 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                      title="Save"
+                    >
+                      <Check className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={handleCancelEdit}
+                      className={`px-2 py-1 rounded transition-colors text-sm ${
+                        darkMode
+                          ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      Cancel
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <p className={darkMode ? 'text-gray-300' : 'text-gray-600'}>{currentMapName}</p>
+                    <button
+                      onClick={handleStartEditTitle}
+                      className={`p-1 rounded transition-colors ${
+                        darkMode
+                          ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700'
+                          : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                      }`}
+                      title="Edit title"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
             <div className="flex items-center gap-3">
               <button
