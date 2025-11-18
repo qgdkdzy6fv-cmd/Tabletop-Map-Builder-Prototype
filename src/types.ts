@@ -30,7 +30,8 @@ export type ShapeType =
   | 'food'
   | 'farm'
   | 'camp-site'
-  | 'individual';
+  | 'individual'
+  | 'enemy';
 
 export interface MapElement {
   id: string;

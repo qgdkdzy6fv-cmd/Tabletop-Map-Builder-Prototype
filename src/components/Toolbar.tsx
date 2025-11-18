@@ -120,6 +120,8 @@ export function Toolbar({
                     <TentTree className="w-6 h-6 mb-1" />
                   ) : shape.type === 'individual' ? (
                     <User className="w-6 h-6 mb-1" />
+                  ) : shape.type === 'enemy' ? (
+                    <X className="w-6 h-6 mb-1" />
                   ) : (
                     <span className="text-2xl mb-1">{shape.icon}</span>
                   )}

@@ -308,6 +308,24 @@ export const shapes: ShapeDefinition[] = [
       ctx.fill();
     },
   },
+  {
+    type: 'enemy',
+    name: 'Enemy',
+    icon: '✕',
+    defaultWidth: 1,
+    defaultHeight: 1,
+    render: (ctx, x, y, width, height, color) => {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = Math.min(width, height) * 0.15;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(x + width * 0.25, y + height * 0.25);
+      ctx.lineTo(x + width * 0.75, y + height * 0.75);
+      ctx.moveTo(x + width * 0.75, y + height * 0.25);
+      ctx.lineTo(x + width * 0.25, y + height * 0.75);
+      ctx.stroke();
+    },
+  },
 ];
 
 export const getShapeDefinition = (type: ShapeType): ShapeDefinition | undefined => {
