@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from './lib/supabase';
+import { localStorageService } from './lib/localStorage';
 import { AuthForm } from './components/AuthForm';
 import { GridCanvas } from './components/GridCanvas';
 import { Toolbar } from './components/Toolbar';
@@ -22,6 +23,7 @@ import { Download, RotateCcw, LogOut, Moon, Sun, ZoomIn, ZoomOut, Edit2, Check }
 
 function App() {
   const [user, setUser] = useState<any>(null);
+  const [isGuest, setIsGuest] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const [currentTool, setCurrentTool] = useState<Tool>('place');
@@ -59,30 +61,58 @@ function App() {
   const [editedMapName, setEditedMapName] = useState('');
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+    const guestMode = localStorage.getItem('guest_mode');
+    if (guestMode === 'true') {
+      setIsGuest(true);
       setLoading(false);
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      (async () => {
+      loadGuestData();
+    } else {
+      supabase.auth.getSession().then(({ data: { session } }) => {
         setUser(session?.user ?? null);
-      })();
-    });
+        setLoading(false);
+      });
 
-    return () => subscription.unsubscribe();
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange((_event, session) => {
+        (async () => {
+          setUser(session?.user ?? null);
+        })();
+      });
+
+      return () => subscription.unsubscribe();
+    }
   }, []);
 
   useEffect(() => {
-    if (user) {
+    if (user && !isGuest) {
       loadMaps();
       loadNotes();
       loadColorHistory();
       loadUserPreferences();
     }
-  }, [user]);
+  }, [user, isGuest]);
+
+  const loadGuestData = () => {
+    setMaps(localStorageService.getMaps());
+    setNotes(localStorageService.getNotes());
+    setColorHistory(localStorageService.getColorHistory());
+    const prefs = localStorageService.getPreferences();
+    if (prefs) {
+      setDarkMode(prefs.dark_mode || false);
+      setSelectedColor(prefs.dark_mode ? '#ffffff' : '#000000');
+      setTimeOfDay(prefs.time_of_day || 'Mid Morning');
+      setCustomTime(prefs.custom_time || '09:00');
+      setAmPm(prefs.am_pm || 'AM');
+    }
+  };
+
+  const handleGuestMode = () => {
+    localStorage.setItem('guest_mode', 'true');
+    setIsGuest(true);
+    setLoading(false);
+    loadGuestData();
+  };
 
   const loadMaps = async () => {
     const { data, error } = await supabase
@@ -119,13 +149,17 @@ function App() {
   };
 
   const loadMapElements = async (mapId: string) => {
-    const { data, error } = await supabase
-      .from('map_elements')
-      .select('*')
-      .eq('map_id', mapId);
+    if (isGuest) {
+      setElements(localStorageService.getMapElements(mapId));
+    } else {
+      const { data, error } = await supabase
+        .from('map_elements')
+        .select('*')
+        .eq('map_id', mapId);
 
-    if (!error && data) {
-      setElements(data);
+      if (!error && data) {
+        setElements(data);
+      }
     }
   };
 
@@ -141,11 +175,36 @@ function App() {
 
       if (existingIndex !== -1) {
         const existingElement = elements[existingIndex];
-        await supabase.from('map_elements').delete().eq('id', existingElement.id);
+        if (isGuest) {
+          localStorageService.deleteElement(existingElement.id);
+        } else {
+          await supabase.from('map_elements').delete().eq('id', existingElement.id);
+        }
       }
     }
 
-    if (currentMapId) {
+    const newElement: MapElement = {
+      id: crypto.randomUUID(),
+      map_id: currentMapId || 'temp',
+      created_at: new Date().toISOString(),
+      ...element,
+    };
+
+    if (isGuest) {
+      if (currentMapId) {
+        localStorageService.saveElement(newElement);
+      }
+      setElements((prev) => {
+        if (isTiny) {
+          return [...prev, newElement];
+        } else {
+          const filtered = prev.filter(
+            (e) => !(e.grid_x === element.grid_x && e.grid_y === element.grid_y)
+          );
+          return [...filtered, newElement];
+        }
+      });
+    } else if (currentMapId) {
       const { data, error } = await supabase
         .from('map_elements')
         .insert({ ...element, map_id: currentMapId })
@@ -165,20 +224,14 @@ function App() {
         });
       }
     } else {
-      const tempElement: MapElement = {
-        id: crypto.randomUUID(),
-        map_id: 'temp',
-        created_at: new Date().toISOString(),
-        ...element,
-      };
       setElements((prev) => {
         if (isTiny) {
-          return [...prev, tempElement];
+          return [...prev, newElement];
         } else {
           const filtered = prev.filter(
             (e) => !(e.grid_x === element.grid_x && e.grid_y === element.grid_y)
           );
-          return [...filtered, tempElement];
+          return [...filtered, newElement];
         }
       });
     }
@@ -188,7 +241,11 @@ function App() {
     const element = elements.find((e) => e.grid_x === x && e.grid_y === y);
     if (element) {
       if (currentMapId && element.map_id !== 'temp') {
-        await supabase.from('map_elements').delete().eq('id', element.id);
+        if (isGuest) {
+          localStorageService.deleteElement(element.id);
+        } else {
+          await supabase.from('map_elements').delete().eq('id', element.id);
+        }
       }
       setElements((prev) => prev.filter((e) => e.id !== element.id));
       setSelectedElementIds((prev) => prev.filter((id) => id !== element.id));
@@ -213,10 +270,14 @@ function App() {
       for (const id of elementIds) {
         const element = updatedElements.find((e) => e.id === id);
         if (element && element.map_id !== 'temp') {
-          await supabase
-            .from('map_elements')
-            .update({ grid_x: element.grid_x, grid_y: element.grid_y })
-            .eq('id', id);
+          if (isGuest) {
+            localStorageService.updateElement(id, { grid_x: element.grid_x, grid_y: element.grid_y });
+          } else {
+            await supabase
+              .from('map_elements')
+              .update({ grid_x: element.grid_x, grid_y: element.grid_y })
+              .eq('id', id);
+          }
         }
       }
     }
@@ -228,12 +289,23 @@ function App() {
     setCurrentMapName(name);
 
     if (currentMapId) {
-      await supabase
-        .from('maps')
-        .update({ name, updated_at: new Date().toISOString() })
-        .eq('id', currentMapId);
+      if (isGuest) {
+        const maps = localStorageService.getMaps();
+        const map = maps.find(m => m.id === currentMapId);
+        if (map) {
+          map.name = name;
+          map.updated_at = new Date().toISOString();
+          localStorageService.saveMap(map);
+          setMaps(localStorageService.getMaps());
+        }
+      } else {
+        await supabase
+          .from('maps')
+          .update({ name, updated_at: new Date().toISOString() })
+          .eq('id', currentMapId);
 
-      loadMaps();
+        loadMaps();
+      }
     }
   };
 
@@ -257,46 +329,84 @@ function App() {
   const handleSaveMap = async (name: string) => {
     setCurrentMapName(name);
 
-    if (currentMapId) {
-      await supabase
-        .from('maps')
-        .update({ name, updated_at: new Date().toISOString() })
-        .eq('id', currentMapId);
-    } else {
-      const { data, error } = await supabase
-        .from('maps')
-        .insert({
+    if (isGuest) {
+      if (currentMapId) {
+        const maps = localStorageService.getMaps();
+        const map = maps.find(m => m.id === currentMapId);
+        if (map) {
+          map.name = name;
+          map.updated_at = new Date().toISOString();
+          localStorageService.saveMap(map);
+        }
+      } else {
+        const newMapId = crypto.randomUUID();
+        const newMap: Map = {
+          id: newMapId,
+          user_id: 'guest',
           name,
           grid_width: gridWidth,
           grid_height: gridHeight,
           cell_size: cellSize,
-          user_id: user.id,
-        })
-        .select()
-        .single();
-
-      if (!error && data) {
-        setCurrentMapId(data.id);
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        localStorageService.saveMap(newMap);
+        setCurrentMapId(newMapId);
 
         for (const element of elements) {
-          await supabase.from('map_elements').insert({
-            map_id: data.id,
-            element_type: element.element_type,
-            grid_x: element.grid_x,
-            grid_y: element.grid_y,
-            shape_type: element.shape_type,
-            text_content: element.text_content,
-            color: element.color,
-            width: element.width,
-            height: element.height,
-          });
+          const savedElement = {
+            ...element,
+            map_id: newMapId,
+            id: element.id === element.map_id ? crypto.randomUUID() : element.id,
+          };
+          localStorageService.saveElement(savedElement);
         }
 
-        await loadMapElements(data.id);
+        setElements(localStorageService.getMapElements(newMapId));
       }
-    }
+      setMaps(localStorageService.getMaps());
+    } else {
+      if (currentMapId) {
+        await supabase
+          .from('maps')
+          .update({ name, updated_at: new Date().toISOString() })
+          .eq('id', currentMapId);
+      } else {
+        const { data, error } = await supabase
+          .from('maps')
+          .insert({
+            name,
+            grid_width: gridWidth,
+            grid_height: gridHeight,
+            cell_size: cellSize,
+            user_id: user.id,
+          })
+          .select()
+          .single();
 
-    loadMaps();
+        if (!error && data) {
+          setCurrentMapId(data.id);
+
+          for (const element of elements) {
+            await supabase.from('map_elements').insert({
+              map_id: data.id,
+              element_type: element.element_type,
+              grid_x: element.grid_x,
+              grid_y: element.grid_y,
+              shape_type: element.shape_type,
+              text_content: element.text_content,
+              color: element.color,
+              width: element.width,
+              height: element.height,
+            });
+          }
+
+          await loadMapElements(data.id);
+        }
+      }
+
+      loadMaps();
+    }
   };
 
   const handleLoadMap = async (mapId: string) => {
@@ -311,11 +421,16 @@ function App() {
   };
 
   const handleDeleteMap = async (mapId: string) => {
-    await supabase.from('maps').delete().eq('id', mapId);
+    if (isGuest) {
+      localStorageService.deleteMap(mapId);
+      setMaps(localStorageService.getMaps());
+    } else {
+      await supabase.from('maps').delete().eq('id', mapId);
+      loadMaps();
+    }
     if (currentMapId === mapId) {
       handleNewMap();
     }
-    loadMaps();
   };
 
   const handleNewMap = () => {
@@ -362,20 +477,35 @@ function App() {
     content: NoteBlock[],
     mapId?: string
   ) => {
-    const { data, error } = await supabase
-      .from('map_notes')
-      .insert({
+    if (isGuest) {
+      const newNote: MapNote = {
+        id: crypto.randomUUID(),
+        user_id: 'guest',
         name,
         content,
         map_id: mapId || currentMapId,
-        user_id: user.id,
-      })
-      .select()
-      .single();
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      localStorageService.saveNote(newNote);
+      setCurrentNote(newNote);
+      setNotes(localStorageService.getNotes());
+    } else {
+      const { data, error } = await supabase
+        .from('map_notes')
+        .insert({
+          name,
+          content,
+          map_id: mapId || currentMapId,
+          user_id: user.id,
+        })
+        .select()
+        .single();
 
-    if (!error && data) {
-      setCurrentNote(data);
-      loadNotes();
+      if (!error && data) {
+        setCurrentNote(data);
+        loadNotes();
+      }
     }
   };
 
@@ -416,7 +546,19 @@ function App() {
   };
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
+    if (isGuest) {
+      localStorage.removeItem('guest_mode');
+      setIsGuest(false);
+      setUser(null);
+      setMaps([]);
+      setElements([]);
+      setNotes([]);
+      setColorHistory([]);
+      setCurrentMapId(null);
+      setCurrentMapName('Untitled Map');
+    } else {
+      await supabase.auth.signOut();
+    }
   };
 
   const loadUserPreferences = async () => {
@@ -445,6 +587,12 @@ function App() {
     custom_time?: string;
     am_pm?: 'AM' | 'PM';
   }) => {
+    if (isGuest) {
+      const currentPrefs = localStorageService.getPreferences() || {};
+      localStorageService.savePreferences({ ...currentPrefs, ...prefs });
+      return;
+    }
+
     if (!user) return;
 
     const { data: existing } = await supabase
@@ -568,6 +716,12 @@ function App() {
   };
 
   const updateColorHistory = async (color: string) => {
+    if (isGuest) {
+      localStorageService.addOrUpdateColor(color);
+      setColorHistory(localStorageService.getColorHistory());
+      return;
+    }
+
     if (!user) return;
 
     const { data: existingColor } = await supabase
@@ -626,24 +780,34 @@ function App() {
   };
 
   const toggleFavoriteColor = async (colorId: string, currentFavorited: boolean) => {
-    await supabase
-      .from('color_history')
-      .update({ is_favorited: !currentFavorited })
-      .eq('id', colorId);
+    if (isGuest) {
+      localStorageService.toggleFavoriteColor(colorId, !currentFavorited);
+      setColorHistory(localStorageService.getColorHistory());
+    } else {
+      await supabase
+        .from('color_history')
+        .update({ is_favorited: !currentFavorited })
+        .eq('id', colorId);
 
-    await loadColorHistory();
+      await loadColorHistory();
+    }
   };
 
   const unfavoriteAndDeleteColor = async (colorId: string) => {
-    await supabase
-      .from('color_history')
-      .update({
-        is_favorited: false,
-        last_used_at: new Date().toISOString(),
-      })
-      .eq('id', colorId);
+    if (isGuest) {
+      localStorageService.toggleFavoriteColor(colorId, false);
+      setColorHistory(localStorageService.getColorHistory());
+    } else {
+      await supabase
+        .from('color_history')
+        .update({
+          is_favorited: false,
+          last_used_at: new Date().toISOString(),
+        })
+        .eq('id', colorId);
 
-    await loadColorHistory();
+      await loadColorHistory();
+    }
   };
 
   if (loading) {
@@ -654,8 +818,8 @@ function App() {
     );
   }
 
-  if (!user) {
-    return <AuthForm onAuthSuccess={() => setLoading(false)} />;
+  if (!user && !isGuest) {
+    return <AuthForm onAuthSuccess={() => setLoading(false)} onGuestMode={handleGuestMode} />;
   }
 
   return (
@@ -728,6 +892,15 @@ function App() {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              {isGuest && (
+                <div className={`px-3 py-1 rounded text-sm ${
+                  darkMode
+                    ? 'bg-yellow-900 text-yellow-200 border border-yellow-700'
+                    : 'bg-yellow-100 text-yellow-800 border border-yellow-300'
+                }`}>
+                  Guest Mode - Data saved locally
+                </div>
+              )}
               <button
                 onClick={toggleDarkMode}
                 className={`flex items-center gap-2 px-4 py-2 rounded transition-colors ${
@@ -749,7 +922,7 @@ function App() {
                 }`}
               >
                 <LogOut className="w-4 h-4" />
-                Sign Out
+                {isGuest ? 'Exit Guest Mode' : 'Sign Out'}
               </button>
             </div>
           </div>

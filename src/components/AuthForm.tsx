@@ -3,9 +3,10 @@ import { supabase } from '../lib/supabase';
 
 interface AuthFormProps {
   onAuthSuccess: () => void;
+  onGuestMode: () => void;
 }
 
-export function AuthForm({ onAuthSuccess }: AuthFormProps) {
+export function AuthForm({ onAuthSuccess, onGuestMode }: AuthFormProps) {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -101,6 +102,18 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
           >
             {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
           </button>
+        </div>
+
+        <div className="mt-4 pt-4 border-t border-gray-200">
+          <button
+            onClick={onGuestMode}
+            className="w-full bg-gray-100 text-gray-700 py-2 rounded-lg hover:bg-gray-200 transition-colors font-semibold"
+          >
+            Continue as Guest
+          </button>
+          <p className="text-xs text-gray-500 mt-2 text-center">
+            Guest mode saves data locally in your browser only
+          </p>
         </div>
       </div>
     </div>
