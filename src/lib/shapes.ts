@@ -292,6 +292,22 @@ export const shapes: ShapeDefinition[] = [
       ctx.stroke();
     },
   },
+  {
+    type: 'individual',
+    name: 'Individual',
+    icon: '👤',
+    defaultWidth: 1,
+    defaultHeight: 1,
+    render: (ctx, x, y, width, height, color) => {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(x + width * 0.5, y + height * 0.3, Math.min(width, height) * 0.15, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(x + width * 0.5, y + height * 0.65, Math.min(width, height) * 0.25, 0, Math.PI * 2);
+      ctx.fill();
+    },
+  },
 ];
 
 export const getShapeDefinition = (type: ShapeType): ShapeDefinition | undefined => {
