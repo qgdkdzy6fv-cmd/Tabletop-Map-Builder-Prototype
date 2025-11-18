@@ -63,7 +63,7 @@ export function GridCanvas({
   const [lastCell, setLastCell] = useState<{ x: number; y: number; subX?: number; subY?: number } | null>(null);
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState<{ x: number; y: number } | null>(null);
-  const [isMenuMinimized, setIsMenuMinimized] = useState(false);
+  const [isMenuMinimized, setIsMenuMinimized] = useState(true);
   const [hoveredCell, setHoveredCell] = useState<{ x: number; y: number } | null>(null);
   const [isDraggingSelection, setIsDraggingSelection] = useState(false);
   const [dragStartCell, setDragStartCell] = useState<{ x: number; y: number } | null>(null);
